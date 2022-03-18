@@ -85,6 +85,15 @@ UA_ServerConfig_setDefault(UA_ServerConfig *config) {
     return UA_ServerConfig_setMinimal(config, 4840, NULL);
 }
 
+/* Create a server config with a custom port number, certificate, and private key.*/
+UA_EXPORT UA_StatusCode
+UA_ServerConfig_setCustom(UA_ServerConfig *config,
+	UA_UInt16 portNumber,
+	UA_Boolean allowAnonymous,
+	const UA_ByteString *certificate,
+	const UA_ByteString *privateKey,
+	UA_DurationRange SamplingIntervalLimits);
+
 /* Creates a new server config with no network layer and no endpoints.
  *
  * It initializes reasonable defaults for many things, but does not
