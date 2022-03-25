@@ -41,6 +41,19 @@ UA_DateTime UA_DateTime_now(void) {
     return (UA_DateTime)ul.QuadPart;
 }
 
+UA_DateTime UA_EXPORT UA_DateTime_nowLocalTime(void)
+{
+	/* Windows filetime has the same definition as UA_DateTime */
+	FILETIME ft;
+	SYSTEMTIME st;
+	GetLocalTime(&st);
+	SystemTimeToFileTime(&st, &ft);
+	ULARGE_INTEGER ul;
+	ul.LowPart = ft.dwLowDateTime;
+	ul.HighPart = ft.dwHighDateTime;
+	return (UA_DateTime)ul.QuadPart;
+}
+
 /* Credit to https://stackoverflow.com/questions/13804095/get-the-time-zone-gmt-offset-in-c */
 UA_Int64 UA_DateTime_localTimeUtcOffset(void) {
     time_t gmt, rawtime = time(NULL);

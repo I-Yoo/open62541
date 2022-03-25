@@ -234,6 +234,9 @@ typedef int64_t UA_DateTime;
 /* The current time in UTC time */
 UA_DateTime UA_EXPORT UA_DateTime_now(void);
 
+/* The current time in LocalTime time */
+UA_DateTime UA_EXPORT UA_DateTime_nowLocalTime(void);
+
 /* Offset between local time and UTC time */
 UA_Int64 UA_EXPORT UA_DateTime_localTimeUtcOffset(void);
 
