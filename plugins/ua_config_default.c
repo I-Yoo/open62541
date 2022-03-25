@@ -269,6 +269,76 @@ setDefaultConfig(UA_ServerConfig *conf) {
 }
 
 UA_EXPORT UA_StatusCode
+UA_ServerConfig_setCustom(UA_ServerConfig *config,
+	UA_UInt16 portNumber,
+	UA_Boolean allowAnonymous,
+	const UA_ByteString *certificate,
+	const UA_ByteString *privateKey,
+	UA_DurationRange SamplingIntervalLimits)
+{
+	UA_UInt32 sendBufferSize = NULL;
+	UA_UInt32 recvBufferSize = NULL;
+	if (!config)
+		return UA_STATUSCODE_BADINVALIDARGUMENT;
+
+	UA_StatusCode retval = setDefaultConfig(config);
+	if (retval != UA_STATUSCODE_GOOD) {
+		UA_ServerConfig_clean(config);
+		return retval;
+	}
+
+	config->samplingIntervalLimits = SamplingIntervalLimits;
+
+	UA_String_clear(&config->buildInfo.manufacturerName);
+	config->buildInfo.manufacturerName = UA_STRING_ALLOC("Baosight");
+	UA_String_clear(&config->buildInfo.productName);
+	config->buildInfo.productName = UA_STRING_ALLOC("Baosight OPC UA Server");
+	UA_String_clear(&config->buildInfo.productUri);
+	config->buildInfo.productUri = UA_STRING_ALLOC("https://www.baosight.com");
+
+	UA_LocalizedText_clear(&config->applicationDescription.applicationName);
+	config->applicationDescription.applicationName =
+		UA_LOCALIZEDTEXT_ALLOC("en", "Baosight-based OPC UA Application");
+
+	retval = addDefaultNetworkLayers(config, portNumber, sendBufferSize, recvBufferSize);
+	if (retval != UA_STATUSCODE_GOOD) {
+		UA_ServerConfig_clean(config);
+		return retval;
+	}
+
+	/* Allocate the SecurityPolicies */
+	//retval = UA_ServerConfig_addSecurityPolicyBasic256(config, certificate, privateKey);
+	retval = UA_ServerConfig_addAllSecurityPolicies(config, certificate, privateKey);
+	if (retval != UA_STATUSCODE_GOOD) {
+		UA_ServerConfig_clean(config);
+		return retval;
+	}
+
+	/* Initialize the Access Control plugin */
+	retval = UA_AccessControl_default(config, allowAnonymous,
+		&config->securityPolicies[config->securityPoliciesSize - 1].policyUri,
+		g_UsernamePasswordsSize, g_pUsernamePasswords);
+	if (retval != UA_STATUSCODE_GOOD) {
+		UA_ServerConfig_clean(config);
+		return retval;
+	}
+
+	/* Allocate the endpoint */
+	retval = UA_ServerConfig_addAllEndpoints(config);
+	//retval = UA_ServerConfig_addEndpoint(config, UA_STRING_ALLOC("http://opcfoundation.org/UA/SecurityPolicy#Basic256"), UA_MESSAGESECURITYMODE_SIGNANDENCRYPT);
+	if (retval != UA_STATUSCODE_GOOD) {
+		UA_ServerConfig_clean(config);
+		return retval;
+	}
+
+	UA_LOG_WARNING(&config->logger, UA_LOGCATEGORY_USERLAND,
+		"AcceptAll Certificate Verification. "
+		"Any remote certificate will be accepted.");
+
+	return UA_STATUSCODE_GOOD;
+}
+
+UA_EXPORT UA_StatusCode
 UA_ServerConfig_setBasics(UA_ServerConfig* conf) {
     UA_StatusCode res = setDefaultConfig(conf);
     UA_LOG_WARNING(&conf->logger, UA_LOGCATEGORY_USERLAND,
